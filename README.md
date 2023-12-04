@@ -1,5 +1,5 @@
 # Research-_Work_1_course
-Более понятная версия работы лежит в NIR_KMBO-04-22_KEMAEV_I_O_2_SEMESTR.pdf
+Более полная и понятная версия работы лежит в NIR_KMBO-04-22_KEMAEV_I_O_2_SEMESTR.pdf
 
 Оглавление
 Задача No1: Решение и выводы
