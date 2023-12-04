@@ -1,0 +1,178 @@
+library(car)
+library("lmtest")
+
+# Вариант 7
+data = na.omit(mtcars)
+help(mtcars)
+
+
+# Первая часть практической
+"Прочитав информацию из набора данных, выполните задачи:
+1. Проверьте, что в наборе данных нет линейной зависимости (построить зависимости
+между переменными, указанными в варианте, и проверить, что R^2 в каждой из них
+невысокий). В случае, если R^2 большой, один из таких столбцов можно исключить
+из рассмотрения.
+2. Постройте линейную модель зависимой переменной от указанных в варианте
+регрессоров по методу наименьших квадратов (команда lm пакета lmtest в языке R).
+Оценить, насколько хороша модель, согласно: 1) R^2, 2) p-значениям каждого
+коэффициента.
+3. Введите в модель логарифмы регрессоров (если возможно). Сравнить модели и
+выбрать наилучшую.
+4. Введите в модель всевозможные произведения пар регрессоров, в том числе
+квадраты регрессоров. Найдите одну или несколько наилучших моделей по доле
+объяснённого разброса в данных R^2."
+
+
+#1 Исследуем линейную завимсимость регрессоров
+model1=lm(mpg~cyl+disp+hp+drat,data)
+vif(model1)#vif=7.7 самый большой у cyl
+summary(lm(disp~cyl+hp+drat,data))#тоже зависим и vif=6.2 > 5
+summary(lm(cyl~disp+hp+drat,data))#убеждаемся что больше всех линейно зависим cyl
+summary(lm(hp~cyl+disp+drat,data))
+summary(lm(drat~disp+hp+cyl,data))
+
+#удаляем cyl из исследования
+
+#2 Строим парную регрессию с менее зависимыми между собой регрессорами
+model2=lm(mpg~disp+hp+drat,data)
+summary(model2) #1)R^2=75% модель очень хороша
+  #2)disp,hp близки к 0.05 по p-статистке (mpg в основном описывается через них) 
+#и также они  зависят от mpg отрицательно, у drat одна *, значит он менее сильно влияет на mpg
+# и также он зависит положительно от mpg
+
+
+#3 Вводим в модель логарифмы регрессоров
+
+vif(lm(I(log(drat))~I(log(disp))+I(log(hp)),data))
+vif(lm(I(log(disp))~I(log(drat))+I(log(hp)),data))
+vif(lm(I(log(hp))~I(log(drat))+I(log(disp)),data))
+#Из vif трех моделей видим что новые столбцы почти линейнонезависимы междусобой
+
+summary(lm(mpg~I(log(disp))+I((hp))+I((drat)),data))#R^2=81%
+summary(lm(mpg~I(log(disp))+I(log(hp))+I((drat)),data))#R^2=82%
+
+model3=lm(mpg~I(log(disp))+I(log(hp))+I(log(drat)),data)
+summary(model3)
+
+#Выбираем новую модель так как,ее R^2=82% (>75% пердыдущей модели) 
+#Так как log(drat) в новой модели не влияет на mpg (нет звездочек и даже точки), 
+#не берем его логарифм (здесь можно его вообще убрать)
+
+model4=lm(mpg~I(log(disp))+I(log(hp)),data)
+summary(model4)#наилучшая модель R^2=82,9%
+
+
+
+#4 Всевозможные пары регрессоров и их квадраты
+
+
+model5=lm(mpg~I(disp*hp)+drat,data)#R^2=71%
+summary(model5)
+vif(model5)
+
+model6=lm(mpg~I(disp*drat)+hp,data)#R^2=68%
+summary(model6)
+vif(model6)
+
+model7=lm(mpg~I(hp*drat)+disp,data)#R^2=72%
+summary(model7)
+vif(model7)
+
+model8=lm(mpg~I(disp^2)+I(hp^2)+I(drat^2),data)#R^2=69%
+summary(model8)
+vif(model8)
+
+model9=lm(mpg~I(disp^2*hp^2)+I(drat),data)#R^2=66%
+summary(model9)
+vif(model9)
+
+model10=lm(mpg~I(disp^2*hp^2)+I(drat^2),data)#R^2=67%
+summary(model10)
+vif(model10)
+
+model11=lm(mpg~I(drat^2*hp^2)+I(disp^2),data)#R^2=60%
+summary(model11)
+vif(model11)
+
+model12=lm(mpg~I(drat^2*hp^2)+I(disp),data)#R^2=70%
+summary(model12)
+vif(model12)
+
+
+model13=lm(mpg~I(drat^2*disp^2)+I(hp^2),data)#R^2=56%
+summary(model13)
+vif(model13)
+
+model14=lm(mpg~I(drat^2*disp^2)+I(hp),data)#R^2=62%
+summary(model14)
+vif(model14)
+
+
+model15=lm(mpg~I(log(disp)^2)+I(log(hp)^2)+I(log(drat)^2)+I(log(hp)*log(drat)),data)
+summary(model15)#R^2=81%
+
+model15=lm(mpg~I(log(disp))+I(log(hp))+I(log(drat))+I(log(hp)*log(drat)),data)
+summary(model15)#R^2=82%
+
+model16=lm(mpg~I(log(disp))+I(log(hp))+I(log(drat))+I(log(disp)*log(hp)),data)
+summary(model16)#R^2=83,8%
+
+#Таким образом из 4ого пункат лучше всех
+# по доле объяснённого разброса в данных R^2 = 83,8% model16=lm(mpg~I(log(disp))+I(log(hp))+I(log(drat))+I(log(disp)*log(hp)),data)
+
+
+"__________________________________________________________________________________"
+
+#Вторая часть практической
+
+
+"Для зависимости, построенной при решении практического задания №2, оцените:
+1. Доверительные интервалы для всех коэффициентов в модели, p = 95%.
+2. Сделайте вывод о отвержении или невозможности отвергнуть статистическую
+гипотезу о том, что коэффициент равен 0.
+3. Доверительный интервал для одного прогноза (p = 95%, набор значений
+регрессоров выбираете сами)."
+
+#1,2) Доверительные интервалы для каждого коэфицента с p=95% и проверка статистической гипотезы коэф = 0
+
+model16=lm(mpg~I(log(disp))+I(log(hp))+I(log(drat))+I(log(disp)*log(hp)),data)
+summary(model16)#R^2=83,8%
+
+#Число степеней свободы модели:37-4=33
+
+crit=qt(0.975,33)# t-критериq Стьюдента = 2.03
+coef(model16)
+
+count_interval <- function(qt,cof,st_er){
+  lw <- cof-qt*st_er
+  up <- cof+qt*st_er
+  newList <- list("lw" = lw, "up" = up)
+  return(newList)
+}
+
+interval=count_interval(crit,172.068,55.939)
+sprintf("[%s , %s]",interval["up"],interval["lw"])#Интервал для свободного коэф
+# Отвергаем гипотезу о том, что этот коэффициент может быть равен 0, на уровне значимости 5% (нет 0 в этом интервале)
+
+interval=count_interval(crit,-25.688,10.445)
+sprintf("[%s , %s]",interval["up"],interval["lw"])#Интревал для log(disp)
+# Отвергаем гипотезу о том, что этот коэффициент может быть равен 0, на уровне значимости 5% (нет 0 в этом интервале)
+
+interval=count_interval(crit,-22.972,10.578)
+sprintf("[%s , %s]",interval["up"],interval["lw"])#Интревал для log(hp)
+# Отвергаем гипотезу о том, что этот коэффициент может быть равен 0, на уровне значимости 5% (нет 0 в этом интервале)
+
+
+interval=count_interval(crit,-1.978,5.109)
+sprintf("[%s , %s]",interval["up"],interval["lw"])#Интревал для log(drat)
+# Этот коэффициент может быть равен 0, на уровне значимости 5% (нет 0 в этом интервале)
+
+interval=count_interval(crit,3.781,2.023)
+sprintf("[%s , %s]",interval["up"],interval["lw"])#Интревал для log(disp) * log(hp)) 
+# Этот коэффициент может быть равен 0, на уровне значимости 5% (нет 0 в этом интервале)
+
+#3 Доверительный интервал для одного прогноза
+
+new.data = data.frame(disp = 10, hp = 15, drat=3.5)
+predict(model16, new.data, interval = "confidence")
+#Доверительный интервал для одного прогноза [43.79245, 99.8277]
